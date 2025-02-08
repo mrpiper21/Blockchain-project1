@@ -1,12 +1,24 @@
 import Wallet from "./Wallet";
 import Transfer from "./Transfer";
 import "./App.scss";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import useEthStore from "./store/eth-store";
+import { generateWallet } from "./scrpits/generateWallet";
 
 function App() {
-  const [balance, setBalance] = useState(0);
-  const [address, setAddress] = useState("");
-  const [privateKey, setPrivateKey] = useState("");
+	const [balance, setBalance] = useState(0);
+	const [address, setAddress] = useState("");
+	// const [privateKey, setPrivateKey] = useState("");
+	const { setPrivateKey, isConnected, privateKey } = useEthStore(
+		(state) => state
+	);
+
+	useEffect(() => {
+		setPrivateKey(generateWallet());
+		isConnected && alert("wallet is connected");
+	}, []);
+
+	console.log("privatekey ----", privateKey);
 
 	return (
 		<div className="app">
