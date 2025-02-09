@@ -14,7 +14,6 @@ function App() {
 		generateNewWallet();
 	}, []);
 
-	console.log("wallet address ----", address);
 
 	return (
 		<div className="app">

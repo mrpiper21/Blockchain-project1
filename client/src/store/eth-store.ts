@@ -79,7 +79,8 @@ const useEthStore = create<EthStoreState>()(
 				const messageHash = hashMessage(message); // Hash the message
 
 				// Sign the message hash with the private key
-				const signature = secp256k1.sign(messageHash, privateKey);
+				const signatu = secp256k1.sign(messageHash, privateKey);
+				const signature = signatu.toCompactHex();
 
 				return {
 					messageHash,

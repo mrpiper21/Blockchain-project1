@@ -3,6 +3,7 @@ import * as secp from "ethereum-cryptography/secp256k1";
 import { toHex } from "ethereum-cryptography/utils";
 import useEthStore from "./store/eth-store";
 import { useEffect } from "react";
+import axios from "axios";
 
 interface Props {
 	address: string;
@@ -26,10 +27,21 @@ function Wallet({ address, setAddress }: Props) {
 		}
 	}
 
-	const { setBalance, balance, setPrivateKey, privateKey } = useEthStore();
+	const { setBalance, balance, setPrivateKey, privateKey, generateNewWallet } =
+		useEthStore();
 
 	useEffect(() => {
-		setBalance(120);
+		const fetchBalance = async () => {
+			const { address } = generateNewWallet();
+			const {
+				data: { balance },
+			} = await axios.post(`http://localhost:3042/init-wallet`, {
+				address,
+			});
+			console.log("balance -------", balance);
+			setBalance(balance);
+		};
+		fetchBalance();
 	}, []);
 
 	return (

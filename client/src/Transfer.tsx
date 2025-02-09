@@ -1,6 +1,7 @@
 import { useState, ChangeEvent, FormEvent } from "react";
 import server from "./server";
 import useEthStore from "./store/eth-store";
+import axios from "axios";
 
 interface TransferProps {
 	address: string;
@@ -21,8 +22,8 @@ function Transfer({ address, setBalance }: TransferProps) {
 		(event: ChangeEvent<HTMLInputElement>) =>
 			setter(event.target.value);
 
-	async function handleTransfer(event: FormEvent<HTMLFormElement>) {
-		event.preventDefault();
+	async function handleTransfer() {
+		// event.preventDefault();
 
 		if (!sendAmount || !recipient) {
 			alert("Please fill in all fields");
@@ -30,22 +31,16 @@ function Transfer({ address, setBalance }: TransferProps) {
 		}
 
 		try {
-			// Sign the transaction
-			const { messageHash, publicKey, signature, message } = signTransaction(
-				parseInt(sendAmount)
-			);
+			const { signature, messageHash } = signTransaction(parseInt(sendAmount));
 
-			// Send signed transaction to server
 			const {
 				data: { balance },
-			} = await server.post<TransferResponse>(`send`, {
+			} = await axios.post(`http://localhost:3042/send`, {
 				sender: address,
 				amount: parseInt(sendAmount),
 				recipient,
-				messageHash,
-				publicKey,
 				signature,
-				message,
+				messageHash,
 			});
 
 			setBalance(balance);
@@ -107,6 +102,7 @@ function Transfer({ address, setBalance }: TransferProps) {
 			</label>
 
 			<button
+				onClick={handleTransfer}
 				type="submit"
 				className="button"
 				disabled={!isValidAmount(sendAmount) || !isValidRecipient(recipient)}
