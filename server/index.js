@@ -1,16 +1,54 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const { recoverPublicKey } = require("./scripts/recoverPublicKey");
+const morgan = require("morgan");
 const port = 3042;
 
 app.use(cors());
 app.use(express.json());
+app.use(morgan("dev"));
 
-const balances = {
-	"02bf78871e24d8588235731d50fecc88a2f7639de2ee5a994bf4972f1c03f32ad7": 100,
-	"03515971dacf1d0b3c513c70bf7d007bc494789716a9d4a78edc59db04cbe85a77": 50,
-	"03d49dc812131de8acb6e958a552d2d97a70fe96d0627b8f759d226e3443ca43ba": 75,
-};
+const balances = new Map();
+balances.set(
+	"03c8dc2c8a11df95aed2a4b34199c51bd12e387cf716cddfb5a5e63821683784e3",
+	40
+);
+
+const generateRandomBalance = () =>
+	Math.floor(Math.random() * (150 - 50 + 1)) + 50;
+
+app.post("/init-wallet", (req, res) => {
+	const { address } = req.body;
+
+	try {
+		// Check if address is valid (basic validation)
+		if (!address || typeof address !== "string") {
+			return res.status(400).send({ message: "Invalid address format" });
+		}
+
+		// If wallet already exists, return existing balance
+		if (balances.has(address)) {
+			return res.send({
+				balance: balances.get(address),
+				message: "Wallet already initialized",
+			});
+		}
+
+		// Generate random balance and store it
+		const initialBalance = generateRandomBalance();
+		balances.set(address, initialBalance);
+
+		// Return the new balance
+		res.send({
+			balance: initialBalance,
+			message: "Wallet initialized successfully",
+		});
+	} catch (error) {
+		console.error("Wallet initialization failed:", error);
+		res.status(500).send({ message: "Failed to initialize wallet" });
+	}
+});
 
 app.get("/balance/:address", (req, res) => {
 	const { address } = req.params;
@@ -21,8 +59,15 @@ app.get("/balance/:address", (req, res) => {
 app.post("/send", (req, res) => {
 	//TODO: GET SIGNATURE FROM CLIENT APP
 	// RECOVER THE PUBLIC ADDRESS FROM THE SIGNATURE
-	const { sender, recipient, amount, signature } = req.body;
+	const { recipient, amount, signature, messageHash } = req.body;
+	console.log(req.body);
+	const { address, publicKey } = recoverPublicKey(
+		messageHash,
+		signature,
+		signature.recovery
+	);
 
+	let sender = address;
 	setInitialBalance(sender);
 	setInitialBalance(recipient);
 
@@ -31,6 +76,7 @@ app.post("/send", (req, res) => {
 	} else {
 		balances[sender] -= amount;
 		balances[recipient] += amount;
+		console.log("balance of recipient -------", balances[recipient]);
 		res.send({ balance: balances[sender] });
 	}
 });
