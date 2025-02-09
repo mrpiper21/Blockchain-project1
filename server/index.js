@@ -21,7 +21,7 @@ app.get("/balance/:address", (req, res) => {
 app.post("/send", (req, res) => {
 	//TODO: GET SIGNATURE FROM CLIENT APP
 	// RECOVER THE PUBLIC ADDRESS FROM THE SIGNATURE
-	const { sender, recipient, amount } = req.body;
+	const { sender, recipient, amount, signature } = req.body;
 
 	setInitialBalance(sender);
 	setInitialBalance(recipient);

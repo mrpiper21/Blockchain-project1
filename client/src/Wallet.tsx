@@ -1,16 +1,16 @@
 import server from "./server";
 import * as secp from "ethereum-cryptography/secp256k1";
 import { toHex } from "ethereum-cryptography/utils";
+import useEthStore from "./store/eth-store";
 
-function Wallet({
-	address,
-	setAddress,
-	balance,
-	setBalance,
-	privateKey,
-	setPrivateKey,
-}) {
-	async function onChange(evt) {
+interface Props {
+	address: string;
+	setAddress: (_address: string) => void;
+	setBalance: (_balance: number) => void;
+}
+
+function Wallet({ address, setAddress }: Props) {
+	async function onChange(evt: any) {
 		const _privateKey = evt.target.value;
 		setPrivateKey(_privateKey);
 		const _address = toHex(secp.secp256k1.getPublicKey(_privateKey));
@@ -25,6 +25,8 @@ function Wallet({
 		}
 	}
 
+	const { setBalance, balance, setPrivateKey, privateKey } = useEthStore();
+
 	return (
 		<div className="container wallet">
 			<h1>Your Wallet</h1>
@@ -33,7 +35,7 @@ function Wallet({
 				Private Key
 				<input
 					placeholder="Type in your private key"
-					value={privateKey}
+					value={privateKey || ""}
 					onChange={onChange}
 				></input>
 			</label>
