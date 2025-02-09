@@ -1,57 +1,118 @@
-import { useState } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import server from "./server";
+import useEthStore from "./store/eth-store";
 
-interface Props {
+interface TransferProps {
 	address: string;
 	setBalance: (balance: number) => void;
 }
 
-function Transfer({ address, setBalance }: Props) {
-	const [sendAmount, setSendAmount] = useState("");
-	const [recipient, setRecipient] = useState("");
+interface TransferResponse {
+	balance: number;
+}
 
-	const setValue = (setter: any) => (evt: any) => setter(evt.target.value);
+function Transfer({ address, setBalance }: TransferProps) {
+	const [sendAmount, setSendAmount] = useState<string>("");
+	const [recipient, setRecipient] = useState<string>("");
+	const { signTransaction } = useEthStore();
 
-	async function transfer(evt: any) {
-		evt.preventDefault();
+	const handleInputChange =
+		(setter: (value: string) => void) =>
+		(event: ChangeEvent<HTMLInputElement>) =>
+			setter(event.target.value);
+
+	async function handleTransfer(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+
+		if (!sendAmount || !recipient) {
+			alert("Please fill in all fields");
+			return;
+		}
 
 		try {
+			// Sign the transaction
+			const { messageHash, publicKey, signature, message } = signTransaction(
+				parseInt(sendAmount)
+			);
+
+			// Send signed transaction to server
 			const {
 				data: { balance },
-			} = await server.post(`send`, {
+			} = await server.post<TransferResponse>(`send`, {
 				sender: address,
 				amount: parseInt(sendAmount),
 				recipient,
+				messageHash,
+				publicKey,
+				signature,
+				message,
 			});
+
 			setBalance(balance);
-		} catch (ex: any) {
-			alert(ex.response.data.message);
+
+			// Clear form after successful transfer
+			setSendAmount("");
+			setRecipient("");
+		} catch (error) {
+			if (error instanceof Error) {
+				alert(error.message);
+			} else if (typeof error === "object" && error && "response" in error) {
+				const axiosError = error as { response: { data: { message: string } } };
+				alert(axiosError.response.data.message);
+			} else {
+				alert("An unknown error occurred");
+			}
 		}
 	}
 
+	// Validate amount is a positive number
+	const isValidAmount = (amount: string): boolean => {
+		const num = parseInt(amount);
+		return !isNaN(num) && num > 0;
+	};
+
+	// Validate recipient address format
+	const isValidRecipient = (addr: string): boolean => {
+		return addr.length > 0; // Add more validation as needed
+	};
+
 	return (
-		<form className="container transfer" onSubmit={transfer}>
+		<form className="container transfer" onSubmit={handleTransfer}>
 			<h1>Send Transaction</h1>
 
 			<label>
 				Send Amount
 				<input
+					type="number"
+					min="1"
+					step="1"
 					placeholder="1, 2, 3..."
 					value={sendAmount}
-					onChange={setValue(setSendAmount)}
-				></input>
+					onChange={handleInputChange(setSendAmount)}
+					required
+				/>
 			</label>
 
 			<label>
 				Recipient
 				<input
+					type="text"
 					placeholder="Type an address, for example: 0x2"
 					value={recipient}
-					onChange={setValue(setRecipient)}
-				></input>
+					onChange={handleInputChange(setRecipient)}
+					required
+					pattern="^0x[0-9a-fA-F]+$"
+					title="Please enter a valid Ethereum address starting with 0x"
+				/>
 			</label>
 
-			<input type="submit" className="button" value="Transfer" />
+			<button
+				type="submit"
+				className="button"
+				disabled={!isValidAmount(sendAmount) || !isValidRecipient(recipient)}
+			>
+				Transfer
+			</button>
 		</form>
 	);
 }

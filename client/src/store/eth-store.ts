@@ -1,8 +1,13 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { generateWallet } from "../scrpits/generateWallet";
-import { getPublicKey } from "../scrpits/getPublicKey";
-import { getAddress } from "../scrpits/getAddress";
+// import { hashMessage } from "ethers";
+import {
+	generateWallet,
+	getAddress,
+	getPublicKey,
+	hashMessage,
+} from "../scrpits/cryptography";
+import { secp256k1 } from "ethereum-cryptography/secp256k1";
 
 // Define the types for the store's state
 interface EthStoreState {
@@ -10,17 +15,25 @@ interface EthStoreState {
 	isConnected: boolean;
 	publicKey: string | null;
 	address: string | null;
+	balance: string | number | null;
 	setPrivateKey: (key: string | null) => void;
 	generateNewWallet: () => { address: string };
 	clearPrivateKey: () => void;
-	balance: string | number | null;
 	setBalance: (_balance: string | number) => void;
+	signTransaction: (amount: number) =>
+		| {
+				messageHash: string;
+				publicKey: string;
+				signature: string;
+				message: string;
+		  }
+		| any;
 }
 
 // Now we need to type the store correctly by including the `persist` middleware type.
 const useEthStore = create<EthStoreState>()(
 	persist(
-		(set) => ({
+		(set, get) => ({
 			privateKey: null,
 			isConnected: false,
 			publicKey: null,
@@ -34,6 +47,7 @@ const useEthStore = create<EthStoreState>()(
 					isConnected: !!key,
 				}),
 
+			// Generate a new wallet with a private key, public key, and address
 			generateNewWallet: () => {
 				const privateKey = generateWallet();
 				const publicKey = getPublicKey(privateKey);
@@ -48,8 +62,31 @@ const useEthStore = create<EthStoreState>()(
 
 				return { address };
 			},
+
+			// Update the balance in the store
 			setBalance: (balance: string | number) => {
 				set({ balance });
+			},
+
+			// Sign the transaction with the private key
+			signTransaction: (amount: number) => {
+				const { privateKey, publicKey, address } = get();
+				if (!privateKey || !publicKey || !address) {
+					throw new Error("Wallet is not connected.");
+				}
+
+				const message = `Send ${amount} to ${address}`;
+				const messageHash = hashMessage(message); // Hash the message
+
+				// Sign the message hash with the private key
+				const signature = secp256k1.sign(messageHash, privateKey);
+
+				return {
+					messageHash,
+					publicKey,
+					signature,
+					message,
+				};
 			},
 
 			// Clear private key and reset connection state

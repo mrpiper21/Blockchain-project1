@@ -18,11 +18,11 @@ function App() {
 
 	return (
 		<div className="app">
-			{/* <Wallet
+			<Wallet
 				address={address || ""}
 				setBalance={setBalance}
 				setAddress={setPrivateKey}
-			/> */}
+			/>
 			<Transfer
 				setBalance={setBalance}
 				address={address || ""}

@@ -2,6 +2,7 @@ import server from "./server";
 import * as secp from "ethereum-cryptography/secp256k1";
 import { toHex } from "ethereum-cryptography/utils";
 import useEthStore from "./store/eth-store";
+import { useEffect } from "react";
 
 interface Props {
 	address: string;
@@ -27,6 +28,10 @@ function Wallet({ address, setAddress }: Props) {
 
 	const { setBalance, balance, setPrivateKey, privateKey } = useEthStore();
 
+	useEffect(() => {
+		setBalance(120);
+	}, []);
+
 	return (
 		<div className="container wallet">
 			<h1>Your Wallet</h1>
@@ -42,7 +47,7 @@ function Wallet({ address, setAddress }: Props) {
 
 			<div>Address: {address}</div>
 
-			<div className="balance">Balance: {balance}</div>
+			<div className="balance">Balance: {balance || 0}</div>
 		</div>
 	);
 }
