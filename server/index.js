@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const { recoverPublicKey } = require("./scripts/recoverPublicKey");
+const recoverPublicKey = require("./scripts/recoverPublicKey");
 const morgan = require("morgan");
 const port = 3042;
 
@@ -22,12 +22,10 @@ app.post("/init-wallet", (req, res) => {
 	const { address } = req.body;
 
 	try {
-		// Check if address is valid (basic validation)
 		if (!address || typeof address !== "string") {
 			return res.status(400).send({ message: "Invalid address format" });
 		}
 
-		// If wallet already exists, return existing balance
 		if (balances.has(address)) {
 			return res.send({
 				balance: balances.get(address),
@@ -35,11 +33,9 @@ app.post("/init-wallet", (req, res) => {
 			});
 		}
 
-		// Generate random balance and store it
 		const initialBalance = generateRandomBalance();
 		balances.set(address, initialBalance);
 
-		// Return the new balance
 		res.send({
 			balance: initialBalance,
 			message: "Wallet initialized successfully",
@@ -59,13 +55,11 @@ app.get("/balance/:address", (req, res) => {
 app.post("/send", (req, res) => {
 	//TODO: GET SIGNATURE FROM CLIENT APP
 	// RECOVER THE PUBLIC ADDRESS FROM THE SIGNATURE
-	const { recipient, amount, signature, messageHash } = req.body;
+	const { recipientAddress, amount, signature, messageHash } = req.body;
 	console.log(req.body);
-	const { address, publicKey } = recoverPublicKey(
-		messageHash,
-		signature,
-		signature.recovery
-	);
+	const address = recoverPublicKey(messageHash, signature, recipientAddress);
+
+	console.log("verified --------- ", address);
 
 	let sender = address;
 	setInitialBalance(sender);

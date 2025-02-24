@@ -1,26 +1,19 @@
-const { secp256k1 } = require("ethereum-cryptography/secp256k1");
-const { keccak256 } = require("ethereum-cryptography/keccak");
-const { utf8ToBytes, toHex } = require("ethereum-cryptography/utils");
+// recoverPublicKey.js
+import * as secp from "@noble/secp256k1";
 
-// Function to recover the public key from signature
-function recoverPublicKey(messageHash, signature, recoveryBit) {
-	// 1. Hash the original message
+function recoverPublicKey(messageHash, privateKey) {
+	try {
+		const pub2 = messageHash;
 
-	// 2. Recover the public key using the signature
-	const publicKey = secp256k1.recoverPublicKey(
-		messageHash,
-		signature,
-		recoveryBit
-	);
+		const signature = secp.signAsync(msgHash);
 
-	// 3. Convert to Ethereum address format
-	const publicKeyBytes = publicKey.slice(1); // Remove the first byte (format byte)
-	const address = keccak256(publicKeyBytes).slice(-20); // Take last 20 bytes
+		// Verify and recover the public key
+		// const publicKey = secp256k1.verify(sigBytes, msgHashBytes);
 
-	return {
-		publicKey: toHex(publicKey),
-		address: `0x${toHex(address)}`,
-	};
+		return pub2;
+	} catch (error) {
+		throw new Error(`Failed to recover public key: ${error.message}`);
+	}
 }
 
 module.exports = recoverPublicKey;
