@@ -2,7 +2,6 @@ import server from "./server";
 import * as secp from "ethereum-cryptography/secp256k1";
 import { toHex } from "ethereum-cryptography/utils";
 import useEthStore from "./store/eth-store";
-import { useEffect } from "react";
 import axios from "axios";
 
 interface Props {
@@ -30,19 +29,26 @@ function Wallet({ address, setAddress }: Props) {
 	const { setBalance, balance, setPrivateKey, privateKey, generateNewWallet } =
 		useEthStore();
 
-	useEffect(() => {
-		const fetchBalance = async () => {
-			const { address } = generateNewWallet();
-			const {
-				data: { balance },
-			} = await axios.post(`http://localhost:3042/init-wallet`, {
-				address,
-			});
-			console.log("balance -------", balance);
-			setBalance(balance);
-		};
+	const fetchBalance = async () => {
+		const { address } = generateNewWallet();
+		const {
+			data: { balance },
+		} = await axios.post(`http://localhost:3042/init-wallet`, {
+			address,
+		});
+		console.log("balance -------", balance);
+		setBalance(balance);
+	};
+
+	const initiateWallet = () => {
+		generateNewWallet();
 		fetchBalance();
-	}, []);
+	};
+
+	// useEffect(() => {
+
+	// 	fetchBalance();
+	// }, []);
 
 	return (
 		<div className="container wallet">
@@ -50,16 +56,23 @@ function Wallet({ address, setAddress }: Props) {
 
 			<label>
 				Private Key
-				<input
-					placeholder="Type in your private key"
-					value={privateKey || ""}
-					onChange={onChange}
-				></input>
+				<div className="privateInputContainer">
+					<input
+						className="textInput"
+						placeholder="Type in your private key"
+						value={privateKey || ""}
+						onChange={onChange}
+					/>
+					<div></div>
+				</div>
 			</label>
 
 			<div>Address: {address}</div>
 
-			<div className="balance">Balance: {balance || 0}</div>
+			<div className="balance">Balance: {balance ?? 0}</div>
+			<button onClick={initiateWallet} className="generateBtn">
+				<span>Generate wallet</span>
+			</button>
 		</div>
 	);
 }

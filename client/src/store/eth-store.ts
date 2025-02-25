@@ -1,4 +1,7 @@
 import { create } from "zustand";
+// import * as secp from "@noble/secp256k1";
+import { secp256k1 } from "ethereum-cryptography/secp256k1";
+
 import { persist, createJSONStorage } from "zustand/middleware";
 // import { hashMessage } from "ethers";
 import {
@@ -7,9 +10,7 @@ import {
 	getPublicKey,
 	hashMessage,
 } from "../scrpits/cryptography";
-import { secp256k1 } from "ethereum-cryptography/secp256k1";
 
-// Define the types for the store's state
 interface EthStoreState {
 	privateKey: string | null;
 	isConnected: boolean;
@@ -20,14 +21,12 @@ interface EthStoreState {
 	generateNewWallet: () => { address: string };
 	clearPrivateKey: () => void;
 	setBalance: (_balance: string | number) => void;
-	signTransaction: (amount: number) =>
-		| {
-				messageHash: string;
-				publicKey: string;
-				signature: string;
-				message: string;
-		  }
-		| any;
+	signTransaction: (amount: number) => {
+		messageHash: string;
+		publicKey: string;
+		signature: string;
+		message: string;
+	};
 }
 
 // Now we need to type the store correctly by including the `persist` middleware type.
@@ -79,13 +78,16 @@ const useEthStore = create<EthStoreState>()(
 				const messageHash = hashMessage(message); // Hash the message
 
 				// Sign the message hash with the private key
-				const signatu = secp256k1.sign(messageHash, privateKey);
-				const signature = signatu.toCompactHex();
+				const signature = secp256k1.sign(messageHash, privateKey);
+				// const signatu = secp256k1.sign(messageHash, privateKey);
+				// const signature = signatu.toCompactHex();
+				const mysignature = signature.toCompactHex();
+				// secp
 
 				return {
 					messageHash,
 					publicKey,
-					signature,
+					signature: mysignature,
 					message,
 				};
 			},

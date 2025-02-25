@@ -1,21 +1,17 @@
-import { useState, ChangeEvent, FormEvent } from "react";
-import server from "./server";
+import { useState, ChangeEvent } from "react";
+// import server from "./server";
 import useEthStore from "./store/eth-store";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 interface TransferProps {
-	address: string;
 	setBalance: (balance: number) => void;
 }
 
-interface TransferResponse {
-	balance: number;
-}
-
-function Transfer({ address, setBalance }: TransferProps) {
+function Transfer({ setBalance }: TransferProps) {
 	const [sendAmount, setSendAmount] = useState<string>("");
 	const [recipient, setRecipient] = useState<string>("");
-	const { signTransaction } = useEthStore();
+	const { signTransaction, publicKey } = useEthStore();
 
 	const handleInputChange =
 		(setter: (value: string) => void) =>
@@ -32,28 +28,32 @@ function Transfer({ address, setBalance }: TransferProps) {
 
 		try {
 			const { signature, messageHash } = signTransaction(parseInt(sendAmount));
+			console.log("recovery --------- ", signature);
 
 			const {
 				data: { balance },
 			} = await axios.post(`http://localhost:3042/send`, {
-				sender: address,
 				amount: parseInt(sendAmount),
-				recipient,
+				recipientAddress: recipient,
 				signature,
 				messageHash,
+				senderAddress: publicKey,
 			});
 
+			console.log("response balance ", balance);
+
 			setBalance(balance);
+			toast.success(`Successfully sent ${sendAmount}`);
 
 			// Clear form after successful transfer
 			setSendAmount("");
 			setRecipient("");
 		} catch (error) {
 			if (error instanceof Error) {
-				alert(error.message);
+				toast.error(error.message);
 			} else if (typeof error === "object" && error && "response" in error) {
 				const axiosError = error as { response: { data: { message: string } } };
-				alert(axiosError.response.data.message);
+				toast.error(axiosError.response.data.message);
 			} else {
 				alert("An unknown error occurred");
 			}

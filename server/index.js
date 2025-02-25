@@ -1,8 +1,8 @@
-const express = require("express");
+import express from "express";
+import cors from "cors";
+import morgan from "morgan";
+import { verify } from "./scripts/verify.js";
 const app = express();
-const cors = require("cors");
-const recoverPublicKey = require("./scripts/recoverPublicKey");
-const morgan = require("morgan");
 const port = 3042;
 
 app.use(cors());
@@ -11,7 +11,7 @@ app.use(morgan("dev"));
 
 const balances = new Map();
 balances.set(
-	"03c8dc2c8a11df95aed2a4b34199c51bd12e387cf716cddfb5a5e63821683784e3",
+	"0x03c8dc2c8a11df95aed2a4b34199c51bd12e387cf716cddfb5a5e63821683784e3",
 	40
 );
 
@@ -55,32 +55,33 @@ app.get("/balance/:address", (req, res) => {
 app.post("/send", (req, res) => {
 	//TODO: GET SIGNATURE FROM CLIENT APP
 	// RECOVER THE PUBLIC ADDRESS FROM THE SIGNATURE
-	const { recipientAddress, amount, signature, messageHash } = req.body;
+	const { recipientAddress, senderAddress, amount, signature, messageHash } =
+		req.body;
 	console.log(req.body);
-	const address = recoverPublicKey(messageHash, signature, recipientAddress);
+	// const address = recoverPublicKey(messageHash, signature, recipientAddress);
+	const isValid = verify(signature, messageHash, senderAddress);
 
-	console.log("verified --------- ", address);
+	console.log("verified --------- ", isValid);
 
-	let sender = address;
-	setInitialBalance(sender);
-	setInitialBalance(recipient);
+	setInitialBalance(senderAddress);
+	setInitialBalance(recipientAddress);
 
-	if (balances[sender] < amount) {
+	if (!isValid && balances[senderAddress] < amount) {
 		res.status(400).send({ message: "Not enough funds!" });
 	} else {
-		balances[sender] -= amount;
-		balances[recipient] += amount;
-		console.log("balance of recipient -------", balances[recipient]);
-		res.send({ balance: balances[sender] });
+		balances[senderAddress] -= amount;
+		balances[recipientAddress] += amount;
+		console.log("balance of recipient -------", balances[recipientAddress]);
+		return res.send({ balance: balances[senderAddress] });
 	}
 });
 
 app.listen(port, () => {
-  console.log(`Listening on port ${port}!`);
+	console.log(`Listening on port ${port}!`);
 });
 
 function setInitialBalance(address) {
-  if (!balances[address]) {
-    balances[address] = 0;
-  }
+	if (!balances[address]) {
+		balances[address] = 0;
+	}
 }

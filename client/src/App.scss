@@ -22,6 +22,26 @@ label {
   margin: 0 auto;
 }
 
+.generateBtn {
+  background-color: #222;
+  border-radius: 8px;
+  border-width: 0;
+  color: #f4f6f8;
+  height: 37px;
+  margin-top: 20px;
+}
+
+.privateInputContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: auto;
+
+  input {
+    width: 550px;
+  }
+}
+
 .container {
   flex-grow: 1;
   margin: 0 20px;

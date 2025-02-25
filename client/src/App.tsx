@@ -1,19 +1,13 @@
 import Wallet from "./Wallet";
 import Transfer from "./Transfer";
 import "./App.scss";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import useEthStore from "./store/eth-store";
 
 function App() {
 	const [balance, setBalance] = useState(0);
 	// const [privateKey, setPrivateKey] = useState("");
-	const { setPrivateKey, isConnected, privateKey, generateNewWallet, address } =
-		useEthStore();
-
-	useEffect(() => {
-		generateNewWallet();
-	}, []);
-
+	const { setPrivateKey, address } = useEthStore();
 
 	return (
 		<div className="app">
@@ -24,7 +18,6 @@ function App() {
 			/>
 			<Transfer
 				setBalance={setBalance}
-				address={address || ""}
 				// privateKey={privateKey || ''}
 			/>
 		</div>
